@@ -1,25 +1,60 @@
-﻿namespace MeuAppTempoAgora
+﻿using System.Net.Http;
+using System.Threading.Tasks;
+using MeuAppTempoAgora.Models;
+using MeuAppTempoAgora.Services;
+
+namespace MeuAppTempoAgora
 {
     public partial class MainPage : ContentPage
     {
-        int count = 0;
-
         public MainPage()
         {
             InitializeComponent();
         }
 
-        private void OnCounterClicked(object sender, EventArgs e)
+        private async void Button_Clicked(object sender, EventArgs e)
         {
-            count++;
+            try
+            {
+                if (!string.IsNullOrEmpty(txt_cidade.Text))
+                {
+                    Tempo? t = await DataService.GetPrevisao(txt_cidade.Text);
 
-            if (count == 1)
-                CounterBtn.Text = $"Clicked {count} time";
-            else
-                CounterBtn.Text = $"Clicked {count} times";
+                    if (t != null)
+                    {
+                        string dados_previsao = $"Latitude: {t.lat} \n" +
+                              $"Longitude: {t.lon} \n" +
+                              $"Nascer do Sol: {t.sunrise} \n" +
+                              $"Por do Sol: {t.sunset} \n" +
+                              $"Temp Máx: {t.temp_max}°C \n" +
+                              $"Temp Min: {t.temp_min}°C \n" +
+                              $"Descrição: {t.description} \n" +
+                              $"Vento: {t.speed} m/s \n" +
+                              $"Visibilidade: {t.visibility} metros";
 
-            SemanticScreenReader.Announce(CounterBtn.Text);
+                        lbl_res.Text = dados_previsao;
+                    }
+                    else
+                    {
+                        // Cidade não encontrada
+                        await DisplayAlert("Aviso", "Cidade não encontrada. Verifique o nome e tente novamente.", "Ok");
+                        lbl_res.Text = "";
+                    }
+                }
+                else
+                {
+                    lbl_res.Text = "Preencha a cidade.";
+                }
+            }
+            catch (HttpRequestException)
+            {
+                // Sem conexão com a internet
+                await DisplayAlert("Erro", "Sem conexão com a internet. Verifique e tente novamente.", "Ok");
+            }
+            catch (Exception ex)
+            {
+                await DisplayAlert("Ops", $"Erro inesperado: {ex.Message}", "Ok");
+            }
         }
     }
-
 }
